@@ -4,10 +4,15 @@
 // Application Dependencies
 const express = require('express');
 const superagent = require('superagent');
+const pg = require('pg');
 
 // Application Setup
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+//Database setup
+const client = new pg.Client(process.env.DATABASE_URL);
+client.on('error', err => console.error(err));
 
 // Application Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -23,7 +28,6 @@ app.post('/searches', createSearch);
 
 app.get('*', (request, response) => response.status(404).send('This route does not exist'));
 
-app.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 // HELPER FUNCTIONS
 function Book(info) {
@@ -67,3 +71,4 @@ function handleError(error, response) {
   error = 'Sorry, not a valid search.'
   response.render('pages/error', { error: error });
 }
+client.connect().then(app.listen(PORT, () => console.log(`Listening on port: ${PORT}`))).catch(err => console.error(err));
