@@ -10,21 +10,24 @@
   <main>
     <h4>Search Results</h4>
     <ul class="search-results">
-      <% searchResults.forEach(book => { %>
+      <% results.forEach(book => { %>
       <li data-book-id="<%= book.isbn %>">
-        <div class="book-container">
-          <img src=<%= book.image_url %>>
-          <section>
-            <h3><%= book.title %></h3>
-            <span><%= book.author %></span>
-            <p class="desc"><%= book.description %></p>
-          </section>
-          </section>
+        <%- include('../books/detail', {book: book}) %>
+        <form action="/books" method="post">
+          <input type="hidden" name="title" value="<%= book.title %>" required />
+          <input type="hidden" name="author" value="<%= book.author %>" required />
+          <input type="hidden" name="isbn" value="<%= book.isbn %>" />
+          <input type="hidden" name="image_url" value="<%= book.image_url %>" />
+          <input type="hidden" name="description" value="<%= book.description %>" />
+          <button id="show-me" type="submit">Add to my Bookshelf</button>
+        </form>
       </li>
       <% }) %>
     </ul>
   </main>
   <%- include('../../layout/footer') %>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 
 </html>

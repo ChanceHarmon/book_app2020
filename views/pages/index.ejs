@@ -8,7 +8,16 @@
 <body>
   <%- include('../layout/header') %>
   <main>
-    <h4 class="view-title">My Bookshelf</h4>
+    <h4>Saved Books</h4>
+    <p id="book-count"><%= books.length %> books in the Collection</p>
+    <ul id="book-list">
+      <% books.forEach(book => { %>
+      <li class="book-items" data-book-id="<%= book.id %>">
+        <%- include('books/detail', {book: book}) %>
+        <p class="detail-button"><a href="/books/<%= book.id %>">View Details</a></p>
+      </li>
+      <% }) %>
+    </ul>
   </main>
   <%- include('../layout/footer') %>
 </body>

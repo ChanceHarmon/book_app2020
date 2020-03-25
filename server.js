@@ -1,17 +1,19 @@
-
 'use strict';
+
+require('dotenv').config();
 
 // Application Dependencies
 const express = require('express');
-const superagent = require('superagent');
 const pg = require('pg');
+const superagent = require('superagent');
 
 // Application Setup
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-//Database setup
+// Database Setup
 const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
 client.on('error', err => console.error(err));
 
 // Application Middleware
@@ -23,38 +25,41 @@ app.set('view engine', 'ejs');
 
 // API Routes
 app.get('/', getBooks);
-app.get('/searches/new', newSearch);
 app.post('/searches', createSearch);
+app.get('/searches/new', newSearch);
+app.post('/books', createBook);
+app.get('/books/:id', getBook);
 
 app.get('*', (request, response) => response.status(404).send('This route does not exist'));
 
+app.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
 
 // HELPER FUNCTIONS
 function Book(info) {
   const placeholderImage = 'https://i.imgur.com/J5LVHEL.jpg';
-  let httpRegex = /^(http:\/\/)/g
 
   this.title = info.title ? info.title : 'No title available';
   this.author = info.authors ? info.authors[0] : 'No author available';
   this.isbn = info.industryIdentifiers ? `ISBN_13 ${info.industryIdentifiers[0].identifier}` : 'No ISBN available';
-  this.image_url = info.imageLinks ? info.imageLinks.smallThumbnail.replace(httpRegex, 'https://') : placeholderImage;
+  this.image_url = info.imageLinks ? info.imageLinks.smallThumbnail : placeholderImage;
   this.description = info.description ? info.description : 'No description available';
   this.id = info.industryIdentifiers ? `${info.industryIdentifiers[0].identifier}` : '';
 }
 
-// The "Home Page" is the list of books from our bookshelf
-// Currently, empty, but we'll do it in the next lab
 function getBooks(request, response) {
-  response.render('pages/index');
+  let SQL = 'SELECT * FROM books;';
+
+  return client.query(SQL)
+    .then(results => {
+      if (results.rows.rowCount === 0) {
+        response.render('pages/searches/new');
+      } else {
+        response.render('pages/index', { books: results.rows })
+      }
+    })
+    .catch(err => handleError(err, response));
 }
 
-// Route for /searches/new
-// Will draw the search form
-function newSearch(request, response) {
-  response.render('pages/searches/new');
-}
-
-// Fulfills search form submission by going to google books api
 function createSearch(request, response) {
   let url = 'https://www.googleapis.com/books/v1/volumes?q=';
 
@@ -63,12 +68,48 @@ function createSearch(request, response) {
 
   superagent.get(url)
     .then(apiResponse => apiResponse.body.items.map(bookResult => new Book(bookResult.volumeInfo)))
-    .then(results => response.render('pages/searches/show', { searchResults: results }))
+    .then(results => response.render('pages/searches/show', { results: results }))
     .catch(err => handleError(err, response));
 }
 
+function newSearch(request, response) {
+  response.render('pages/searches/new');
+}
+
+function createBook(request, response) {
+
+  let { title, author, isbn, image_url, description } = request.body;
+  let SQL = 'INSERT INTO books(title, author, isbn, image_url, description) VALUES($1, $2, $3, $4, $5);';
+  let values = [title, author, isbn, image_url, description];
+
+  return client.query(SQL, values)
+    .then(() => {
+      SQL = 'SELECT * FROM books WHERE isbn=$1;';
+      values = [request.body.isbn];
+      return client.query(SQL, values)
+        .then(result => response.redirect(`/books/${result.rows[0].id}`))
+        .catch(handleError);
+    })
+    .catch(err => handleError(err, response));
+}
+
+function getBook(request, response) {
+  getBookshelves()
+    .then(shelves => {
+      let SQL = 'SELECT * FROM books WHERE id=$1;';
+      let values = [request.params.id];
+      client.query(SQL, values)
+        .then(result => response.render('pages/books/show', { book: result.rows[0], bookshelves: shelves.rows }))
+        .catch(err => handleError(err, response));
+    })
+}
+
+function getBookshelves() {
+  let SQL = 'SELECT DISTINCT bookshelf FROM books ORDER BY bookshelf;';
+
+  return client.query(SQL);
+}
+
 function handleError(error, response) {
-  error = 'Sorry, not a valid search.'
   response.render('pages/error', { error: error });
 }
-client.connect().then(app.listen(PORT, () => console.log(`Listening on port: ${PORT}`))).catch(err => console.error(err));
