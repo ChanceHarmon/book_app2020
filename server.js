@@ -6,6 +6,7 @@ require('dotenv').config();
 const express = require('express');
 const pg = require('pg');
 const superagent = require('superagent');
+const methodOverride = require('method-override');
 
 // Application Setup
 const app = express();
@@ -18,6 +19,7 @@ client.on('error', err => console.error(err));
 
 // Application Middleware
 app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride('_method'));
 app.use(express.static('public'));
 
 // Set the view engine for server-side templating
@@ -29,6 +31,8 @@ app.post('/searches', createSearch);
 app.get('/searches/new', newSearch);
 app.post('/books', createBook);
 app.get('/books/:id', getBook);
+app.put('/books/:id', updateBook);
+app.delete('/books/:id', deleteBook);
 
 app.get('*', (request, response) => response.status(404).send('This route does not exist'));
 
@@ -78,18 +82,14 @@ function newSearch(request, response) {
 
 function createBook(request, response) {
 
-  let { title, author, isbn, image_url, description } = request.body;
-  let SQL = 'INSERT INTO books(title, author, isbn, image_url, description) VALUES($1, $2, $3, $4, $5);';
-  let values = [title, author, isbn, image_url, description];
+  let normalizedShelf = '';
 
-  return client.query(SQL, values)
-    .then(() => {
-      SQL = 'SELECT * FROM books WHERE isbn=$1;';
-      values = [request.body.isbn];
-      return client.query(SQL, values)
-        .then(result => response.redirect(`/books/${result.rows[0].id}`))
-        .catch(handleError);
-    })
+  let { title, author, isbn, image_url, description } = request.body;
+  let SQL = 'INSERT INTO books(title, author, isbn, image_url, description, bookshelf) VALUES($1, $2, $3, $4, $5, $6) RETURNING id;';
+  let values = [title, author, isbn, image_url, description, normalizedShelf];
+
+  client.query(SQL, values)
+    .then(result => response.redirect(`/books/${result.rows[0].id}`))
     .catch(err => handleError(err, response));
 }
 
@@ -108,6 +108,27 @@ function getBookshelves() {
   let SQL = 'SELECT DISTINCT bookshelf FROM books ORDER BY bookshelf;';
 
   return client.query(SQL);
+}
+
+function updateBook(request, response) {
+  let { title, author, isbn, image_url, description, bookshelf } = request.body;
+
+  let SQL = `UPDATE books SET title=$1, author=$2, isbn=$3, image_url=$4, description=$5, bookshelf=$6 WHERE id=$7;`;
+
+  let values = [title, author, isbn, image_url, description, bookshelf, request.params.id];
+
+  client.query(SQL, values)
+    .then(response.redirect(`/books/${request.params.id}`))
+    .catch(err => handleError(err, response));
+}
+
+function deleteBook(request, response) {
+  let SQL = 'DELETE FROM books WHERE id=$1;';
+  let values = [request.params.id];
+
+  return client.query(SQL, values)
+    .then(response.redirect('/'))
+    .catch(err => handleError(err, response));
 }
 
 function handleError(error, response) {
