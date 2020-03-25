@@ -64,5 +64,6 @@ function createSearch(request, response) {
 }
 
 function handleError(error, response) {
+  error = 'Sorry, not a valid search.'
   response.render('pages/error', { error: error });
 }
