@@ -9,7 +9,7 @@
   <%- include('../layout/header') %>
   <main>
     <h4>Saved Books</h4>
-    <p id="book-count"><%= books.length %> books in the Collection</p>
+    <p id="book-count"><%= books.length %> Books in the Collection</p>
     <ul id="book-list">
       <% books.forEach(book => { %>
       <li class="book-items" data-book-id="<%= book.id %>">

@@ -1,0 +1,17 @@
+<form class="hide-me" action="/books/<%= book.id %>?_method=PUT" method="post">
+  <input type="text" name="title" value="<%= book.title %>" required>
+  <input type="text" name="author" value="<%= book.author %>" required>
+  <input type="text" name="isbn" value="<%= book.isbn %>">
+  <input type="text" name="image_url" value="<%= book.image_url %>">
+  <textarea name="description" cols="30" rows="5"><%= book.description %></textarea>
+
+  <input type="text" value="<%= book.bookshelf %>" placeholder="Choose/Create a Bookshelf" name="bookshelf"
+    list="bookshelves" />
+
+  <datalist id="bookshelves">
+    <% bookshelves.forEach(shelf => { %>
+    <option value="<%= shelf.bookshelf %>" />
+    <% }); %>
+  </datalist>
+  <button class="show-me" type="submit">Save Book</button>
+</form>

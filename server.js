@@ -46,19 +46,7 @@ function Book(info) {
   this.id = info.industryIdentifiers ? `${info.industryIdentifiers[0].identifier}` : '';
 }
 
-function getBooks(request, response) {
-  let SQL = 'SELECT * FROM books;';
 
-  return client.query(SQL)
-    .then(results => {
-      if (results.rows.rowCount === 0) {
-        response.render('pages/searches/new');
-      } else {
-        response.render('pages/index', { books: results.rows })
-      }
-    })
-    .catch(err => handleError(err, response));
-}
 
 function createSearch(request, response) {
   let url = 'https://www.googleapis.com/books/v1/volumes?q=';

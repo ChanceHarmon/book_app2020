@@ -3,13 +3,16 @@
 
 <head>
   <%- include('../../layout/head') %>
+  <link rel="stylesheet" href="/styles/modules/books/show.css">
+  <link rel="stylesheet" href="/styles/modules/searches/show.css">
+
 </head>
 
 <body>
   <%- include('../../layout/header') %>
   <main>
     <h4>Search Results</h4>
-    <ul class="search-results">
+    <ul id="book-list" class="search-results">
       <% results.forEach(book => { %>
       <li data-book-id="<%= book.isbn %>">
         <%- include('../books/detail', {book: book}) %>

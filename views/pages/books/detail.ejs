@@ -6,7 +6,7 @@
   <span>
     <%= book.author %>
   </span>
-  <p class="desc">
+  <p class="desc unlist">
     <%= book.description %>
   </p>
   <p class="isbn">
@@ -17,4 +17,8 @@
     <%= book.bookshelf %>
     <% } %>
   </p>
+  <button class="unlist" id="update-button">Update Details</button>
+  <form class="unlist" action="/books/<%= book.id %>?_method=DELETE" method="post">
+    <button id="delete-button">Delete Book</button>
+  </form>
 </section>
